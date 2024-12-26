@@ -3,3 +3,4 @@ scipy
 matplotlib
 scikit-fuzzy
 flask
+networkx
