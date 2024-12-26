@@ -10,23 +10,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
-        
+
+      # Step 2: Setup Railway CLI
       - name: Setup Railway CLI
         run: npm install -g @railway/cli
-        
+
+      # Step 3: Setup Python
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
+      # Step 4: Install dependencies
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # Step 5: Deploy to Railway
       - name: Deploy to Railway
-        with:
-          service: ${{ secrets.RAILWAY_SERVICE_ID_PROD }}
-          token: ${{ secrets.RAILWAY_PROD_TOKEN }}
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_PROD_TOKEN }}
+        run: railway up --service ${{ secrets.RAILWAY_SERVICE_ID_PROD }}
