@@ -10,9 +10,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Railway CLI
+        run: npm install -g @railway/cli
+        
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -24,7 +27,6 @@ jobs:
           pip install -r requirements.txt
 
       - name: Deploy to Railway
-        uses: railwayapp/cli-action@v1
         with:
           service: ${{ secrets.RAILWAY_SERVICE_ID_PROD }}
           token: ${{ secrets.RAILWAY_PROD_TOKEN }}
