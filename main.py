@@ -5,7 +5,9 @@ from skfuzzy import control as ctrl
 
 # Initialize Flask app
 app = Flask(__name__)
-
+@app.route('/')
+def index():
+    return jsonify({"Bewise": "Empower Smarter Nutrition Choices"})
 # Define input variables food
 energy = ctrl.Antecedent(np.arange(0, 3351, 1), 'energy')
 saturated_fats = ctrl.Antecedent(np.arange(0, 11, 0.1), 'saturated_fats')
