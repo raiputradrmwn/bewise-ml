@@ -304,7 +304,7 @@ def calculate_beverages_nutri_score(data):
         nutri_score = n_points_val - p_points_val
 
         # Determine Nutri-Score category
-        if nutri_score <= 0:  # Special case for water
+        if nutri_score <= 0.4:  # Special case for water
             category_score = "1"
         elif nutri_score <= 2:
             category_score = "2"
