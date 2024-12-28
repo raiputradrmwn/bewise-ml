@@ -285,8 +285,8 @@ def calculate_beverages_nutri_score(data):
         nutrition = data['nutritionFact']    
             
         # Logic for beverages
-        energy_val_kJ = nutrition['energy_beverages'] * 4.184  # Convert kCal to kJ
-        sodium_val_mg = nutrition['sodium_beverages'] * 1000  # Convert g to mg
+        energy_val_kJ = nutrition['energy'] * 4.184  # Convert kCal to kJ
+        sodium_val_mg = nutrition['sodium'] * 1000  # Convert g to mg
 
         n_scoring_beverages.input['energy_beverages'] = energy_val_kJ
         n_scoring_beverages.input['saturated_fats_beverages'] = nutrition['saturated_fat']
