@@ -3,12 +3,10 @@ import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
 
-# Initialize Flask app
 app = Flask(__name__)
 @app.route('/')
 def index():
     return jsonify({"Bewise": "Empower Smarter Nutrition Choices"})
-# Define input variables food
 energy = ctrl.Antecedent(np.arange(0, 3351, 1), 'energy')
 saturated_fats = ctrl.Antecedent(np.arange(0, 11, 0.1), 'saturated_fats')
 sugars = ctrl.Antecedent(np.arange(0, 52, 0.1), 'sugars')
@@ -17,7 +15,6 @@ proteins = ctrl.Antecedent(np.arange(0, 18, 0.1), 'proteins')
 fibers = ctrl.Antecedent(np.arange(0, 8, 0.1), 'fibers')
 fruits_vegetables = ctrl.Antecedent(np.arange(0, 101, 1), 'fruits_vegetables')
 
-# Define input variables for beverages
 energy_beverages = ctrl.Antecedent(np.arange(0, 391, 1), 'energy_beverages')
 saturated_fats_beverages = ctrl.Antecedent(np.arange(0, 11, 0.1), 'saturated_fats_beverages')
 sugars_beverages = ctrl.Antecedent(np.arange(0, 20, 0.1), 'sugars_beverages')
@@ -26,13 +23,11 @@ proteins_beverages = ctrl.Antecedent(np.arange(0, 4.5, 0.1), 'proteins_beverages
 fibers_beverages = ctrl.Antecedent(np.arange(0, 7.5, 0.1), 'fibers_beverages')
 fruits_vegetables_beverages = ctrl.Antecedent(np.arange(0, 81, 1), 'fruits_vegetables_beverages')
 
-# Define output variables
 n_points_food = ctrl.Consequent(np.arange(0, 55, 1), 'n_points_food')
 n_points_beverages = ctrl.Consequent(np.arange(0, 50, 1), 'n_points_beverages')
 p_points_food = ctrl.Consequent(np.arange(0, 16, 1), 'p_points_food')
 p_points_beverages = ctrl.Consequent(np.arange(0, 18, 1), 'p_points_beverages')
 
-# Define membership functions for input variables food
 energy['0'] = fuzz.trimf(energy.universe, [0, 0, 335])
 energy['1'] = fuzz.trimf(energy.universe, [335, 335, 670])
 energy['2'] = fuzz.trimf(energy.universe, [670, 670, 1005])
@@ -102,7 +97,6 @@ fruits_vegetables['1'] = fuzz.trimf(fruits_vegetables.universe, [40, 40, 60])
 fruits_vegetables['2'] = fuzz.trimf(fruits_vegetables.universe, [60, 60, 80])
 fruits_vegetables['5'] = fuzz.trimf(fruits_vegetables.universe, [80, 80, 101])
 
-# Define membership functions for input variables Beverages
 energy_beverages['0'] = fuzz.trimf(energy_beverages.universe, [0, 0, 30])
 energy_beverages['1'] = fuzz.trimf(energy_beverages.universe, [30, 30, 90])
 energy_beverages['2'] = fuzz.trimf(energy_beverages.universe, [90, 90, 150])
@@ -176,21 +170,21 @@ fibers_beverages['2'] = fuzz.trimf(fibers_beverages.universe, [4.1, 4.1, 5.2])
 fibers_beverages['3'] = fuzz.trimf(fibers_beverages.universe, [5.2, 5.2, 6.3])
 fibers_beverages['4'] = fuzz.trimf(fibers_beverages.universe, [6.3, 6.3, 7.4])
 fibers_beverages['5'] = fuzz.trimf(fibers_beverages.universe, [7.4, 7.4, 8])
-fibers_beverages['6'] = fuzz.trimf(fibers_beverages.universe, [8, 8, 9])  # Tambahan
+fibers_beverages['6'] = fuzz.trimf(fibers_beverages.universe, [8, 8, 9]) 
 
 fruits_vegetables_beverages['0'] = fuzz.trimf(fruits_vegetables_beverages.universe, [0, 0, 40])
 fruits_vegetables_beverages['2'] = fuzz.trimf(fruits_vegetables_beverages.universe, [40, 40, 60])
 fruits_vegetables_beverages['4'] = fuzz.trimf(fruits_vegetables_beverages.universe, [60, 60, 80])
 fruits_vegetables_beverages['6'] = fuzz.trimf(fruits_vegetables_beverages.universe, [80, 80, 101])
 
-# Define membership functions for Food
+
 for i in range(11):
     n_points_food[str(i)] = fuzz.trimf(n_points_food.universe, [i*4, i*4, (i+1)*4])
 
 for i in range(6):
     p_points_food[str(i)] = fuzz.trimf(p_points_food.universe, [i*3, i*3, (i+1)*3])
 
-# Define membership functions for Food
+
 
 for i in range(11):
     n_points_beverages[str(i)] = fuzz.trimf(n_points_beverages.universe, [i*4, i*4, (i+1)*4])
@@ -198,12 +192,12 @@ for i in range(11):
 for i in range(7):
     p_points_beverages[str(i)] = fuzz.trimf(p_points_beverages.universe, [i*3, i*3, (i+1)*3])
 
-# Define rules for N points for Food
+
 n_rules_food = []
 for i in range(11):
     n_rules_food.append(ctrl.Rule(energy[str(i)] | saturated_fats[str(i)] | sugars[str(i)] | sodium[str(i)], n_points_food[str(i)]))
 
-# Define rules for P points for Food
+
 p_rules_food = []
 for i in range(6):
     p_rules_food.append(ctrl.Rule(proteins[str(i)] | fibers[str(i)], p_points_food[str(i)]))
@@ -213,14 +207,14 @@ for i in range(6):
     p_rules_food.append(ctrl.Rule(fruits_vegetables['2'], p_points_food['2']))
     p_rules_food.append(ctrl.Rule(fruits_vegetables['5'], p_points_food['5']))
 
-# Define rules for N points for Beverages
+
 n_rules_beverages = []
 for i in range(11):
     n_rules_beverages.append(ctrl.Rule(energy_beverages[str(i)] | saturated_fats_beverages[str(i)] | sugars_beverages[str(i)] | sodium_beverages[str(i)], n_points_beverages[str(i)]))
 
-# Define rules for P points
+
 p_rules_beverages = []
-for i in range(7):  # Sesuaikan dengan jumlah membership function baru
+for i in range(7): 
     p_rules_beverages.append(ctrl.Rule(proteins_beverages[str(i)] | fibers_beverages[str(i)], p_points_beverages[str(i)]))
 p_rules_beverages.append(ctrl.Rule(proteins_beverages['6'] | proteins_beverages['7'], p_points_beverages['5']))
 p_rules_beverages.append(ctrl.Rule(fruits_vegetables_beverages['0'], p_points_beverages['0']))
@@ -228,7 +222,7 @@ p_rules_beverages.append(ctrl.Rule(fruits_vegetables_beverages['2'], p_points_be
 p_rules_beverages.append(ctrl.Rule(fruits_vegetables_beverages['4'], p_points_beverages['4']))
 p_rules_beverages.append(ctrl.Rule(fruits_vegetables_beverages['6'], p_points_beverages['6']))
 
-# Create and simulate the fuzzy control system
+
 n_ctrl_food = ctrl.ControlSystem(n_rules_food)
 p_ctrl_food = ctrl.ControlSystem(p_rules_food)
 n_ctrl_beverages = ctrl.ControlSystem(n_rules_beverages)
@@ -239,14 +233,13 @@ p_scoring_food = ctrl.ControlSystemSimulation(p_ctrl_food)
 n_scoring_beverages = ctrl.ControlSystemSimulation(n_ctrl_beverages)
 p_scoring_beverages = ctrl.ControlSystemSimulation(p_ctrl_beverages)
 
-# Function to calculate Nutri-Score
 def calculate_food_nutri_score(data):
     try:
         nutrition = data['nutritionFact']
 
         # Logic for food
-        energy_val_kJ = nutrition['energy'] * 4.184  # Convert kCal to kJ
-        sodium_val_mg = nutrition['sodium'] * 1000  # Convert g to mg
+        energy_val_kJ = nutrition['energy'] * 4.184
+        sodium_val_mg = nutrition['sodium'] * 1000  
 
         n_scoring_food.input['energy'] = energy_val_kJ
         n_scoring_food.input['saturated_fats'] = nutrition['saturated_fat']
@@ -263,7 +256,6 @@ def calculate_food_nutri_score(data):
         p_points_val = p_scoring_food.output['p_points_food']
         nutri_score = n_points_val - p_points_val
 
-        # Determine Nutri-Score category
         if nutri_score <= 0:
             category_score = "1"
         elif nutri_score <= 2:
@@ -283,10 +275,8 @@ def calculate_food_nutri_score(data):
 def calculate_beverages_nutri_score(data):
     try:
         nutrition = data['nutritionFact']    
-            
-        # Logic for beverages
-        energy_val_kJ = nutrition['energy'] * 4.184  # Convert kCal to kJ
-        sodium_val_mg = nutrition['sodium'] * 1000  # Convert g to mg
+        energy_val_kJ = nutrition['energy'] * 4.184 
+        sodium_val_mg = nutrition['sodium'] * 1000  
 
         n_scoring_beverages.input['energy_beverages'] = energy_val_kJ
         n_scoring_beverages.input['saturated_fats_beverages'] = nutrition['saturated_fat']
@@ -303,8 +293,8 @@ def calculate_beverages_nutri_score(data):
         p_points_val = p_scoring_beverages.output['p_points_beverages']
         nutri_score = n_points_val - p_points_val
 
-        # Determine Nutri-Score category
-        if nutri_score <= 0.4:  # Special case for water
+
+        if nutri_score <= 0.4:  
             category_score = "1"
         elif nutri_score <= 2:
             category_score = "2"
@@ -322,33 +312,28 @@ def calculate_beverages_nutri_score(data):
     except Exception as e:
         return {"error": str(e)}
 
-# Flask endpoint
-# Endpoint 1: Calculate Nutri-Score for food
 @app.route('/calculate-nutri-score/food', methods=['POST'])
 def calculate_food():
     try:
-        # Ambil data dari request body
-        data_list = request.json  # Expecting an array of JSON objects
+
+        data_list = request.json  
 
         if not isinstance(data_list, list):
             return jsonify({"error": "Input must be a list of food products"}), 400
 
-        # Proses setiap produk
         results = []
         for data in data_list:
             result = calculate_food_nutri_score(data)
             results.append(result)
 
-        return jsonify(results)  # Return all results as a list
+        return jsonify(results)  
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Endpoint 2: Calculate Nutri-Score for beverages
 @app.route('/calculate-nutri-score/beverages', methods=['POST'])
 def calculate_beverages():
     try:
-        # Ambil data dari request body
-        data_list = request.json  # Expecting an array of JSON objects
+        data_list = request.json  
 
         if not isinstance(data_list, list):
             return jsonify({"error": "Input must be a list of beverages"}), 400
@@ -359,10 +344,9 @@ def calculate_beverages():
             result = calculate_beverages_nutri_score(data)
             results.append(result)
 
-        return jsonify(results)  # Return all results as a list
+        return jsonify(results)  
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Run Flask app
 if __name__ == "__main__":
     app.run(port=8080)
