@@ -2,349 +2,512 @@ from flask import Flask, request, jsonify
 import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
+import pandas as pd
 
 app = Flask(__name__)
+
 @app.route('/')
 def index():
-    return jsonify({"Bewise": "Empower Smarter Nutrition Choices"})
-energy = ctrl.Antecedent(np.arange(0, 3351, 1), 'energy')
-saturated_fats = ctrl.Antecedent(np.arange(0, 11, 0.1), 'saturated_fats')
-sugars = ctrl.Antecedent(np.arange(0, 52, 0.1), 'sugars')
-sodium = ctrl.Antecedent(np.arange(0, 901, 1), 'sodium')
-proteins = ctrl.Antecedent(np.arange(0, 18, 0.1), 'proteins')
-fibers = ctrl.Antecedent(np.arange(0, 8, 0.1), 'fibers')
-fruits_vegetables = ctrl.Antecedent(np.arange(0, 101, 1), 'fruits_vegetables')
+    return jsonify({"message": "NutriScore Fuzzy Logic API - Ready to calculate nutrition scores"})
 
-energy_beverages = ctrl.Antecedent(np.arange(0, 391, 1), 'energy_beverages')
-saturated_fats_beverages = ctrl.Antecedent(np.arange(0, 11, 0.1), 'saturated_fats_beverages')
-sugars_beverages = ctrl.Antecedent(np.arange(0, 20, 0.1), 'sugars_beverages')
-sodium_beverages = ctrl.Antecedent(np.arange(0, 5, 0.1), 'sodium_beverages')
-proteins_beverages = ctrl.Antecedent(np.arange(0, 4.5, 0.1), 'proteins_beverages')
-fibers_beverages = ctrl.Antecedent(np.arange(0, 7.5, 0.1), 'fibers_beverages')
-fruits_vegetables_beverages = ctrl.Antecedent(np.arange(0, 81, 1), 'fruits_vegetables_beverages')
+# --------------------------
+# Fuzzy Logic Setup
+# --------------------------
 
-n_points_food = ctrl.Consequent(np.arange(0, 55, 1), 'n_points_food')
-n_points_beverages = ctrl.Consequent(np.arange(0, 50, 1), 'n_points_beverages')
+# Beverage Antecedents
+energy_bev = ctrl.Antecedent(np.arange(0, 401, 1), 'energy_bev')
+saturated_fats_bev = ctrl.Antecedent(np.arange(0, 11, 0.1), 'saturated_fats_bev')
+sugars_bev = ctrl.Antecedent(np.arange(0, 51, 0.1), 'sugars_bev')
+sodium_bev = ctrl.Antecedent(np.arange(0, 5, 0.01), 'sodium_bev')
+proteins_bev = ctrl.Antecedent(np.arange(0, 10.1, 0.1), 'proteins_bev')
+fibers_bev = ctrl.Antecedent(np.arange(0, 10, 0.1), 'fibers_bev')
+fruits_vegetables_bev = ctrl.Antecedent(np.arange(0, 81, 1), 'fruits_vegetables_bev')
+
+# Food Antecedents
+energy_food = ctrl.Antecedent(np.arange(0, 3501, 1), 'energy_food')
+saturated_fats_food = ctrl.Antecedent(np.arange(0, 11, 0.1), 'saturated_fats_food')
+sugars_food = ctrl.Antecedent(np.arange(0, 52, 0.1), 'sugars_food')
+sodium_food = ctrl.Antecedent(np.arange(0, 5, 0.01), 'sodium_food')
+proteins_food = ctrl.Antecedent(np.arange(0, 20, 0.1), 'proteins_food')
+fibers_food = ctrl.Antecedent(np.arange(0, 10, 0.1), 'fibers_food')
+fruits_vegetables_food = ctrl.Antecedent(np.arange(0, 101, 1), 'fruits_vegetables_food')
+
+# Consequents
+n_points_bev = ctrl.Consequent(np.arange(0, 41, 1), 'n_points_bev')
+p_points_bev = ctrl.Consequent(np.arange(0, 16, 1), 'p_points_bev')
+n_points_food = ctrl.Consequent(np.arange(0, 41, 1), 'n_points_food')
 p_points_food = ctrl.Consequent(np.arange(0, 16, 1), 'p_points_food')
-p_points_beverages = ctrl.Consequent(np.arange(0, 18, 1), 'p_points_beverages')
 
-energy['0'] = fuzz.trimf(energy.universe, [0, 0, 335])
-energy['1'] = fuzz.trimf(energy.universe, [335, 335, 670])
-energy['2'] = fuzz.trimf(energy.universe, [670, 670, 1005])
-energy['3'] = fuzz.trimf(energy.universe, [1005, 1005, 1340])
-energy['4'] = fuzz.trimf(energy.universe, [1340, 1340, 1675])
-energy['5'] = fuzz.trimf(energy.universe, [1675, 1675, 2010])
-energy['6'] = fuzz.trimf(energy.universe, [2010, 2010, 2345])
-energy['7'] = fuzz.trimf(energy.universe, [2345, 2345, 2680])
-energy['8'] = fuzz.trimf(energy.universe, [2680, 2680, 3015])
-energy['9'] = fuzz.trimf(energy.universe, [3015, 3015, 3350])
-energy['10'] = fuzz.trimf(energy.universe, [3350, 3350, 3351])
+# --------------------------
+# Beverage Membership Functions
+# --------------------------
 
-saturated_fats['0'] = fuzz.trimf(saturated_fats.universe, [0, 0, 1])
-saturated_fats['1'] = fuzz.trimf(saturated_fats.universe, [1, 1, 2])
-saturated_fats['2'] = fuzz.trimf(saturated_fats.universe, [2, 2, 3])
-saturated_fats['3'] = fuzz.trimf(saturated_fats.universe, [3, 3, 4])
-saturated_fats['4'] = fuzz.trimf(saturated_fats.universe, [4, 4, 5])
-saturated_fats['5'] = fuzz.trimf(saturated_fats.universe, [5, 5, 6])
-saturated_fats['6'] = fuzz.trimf(saturated_fats.universe, [6, 6, 7])
-saturated_fats['7'] = fuzz.trimf(saturated_fats.universe, [7, 7, 8])
-saturated_fats['8'] = fuzz.trimf(saturated_fats.universe, [8, 8, 9])
-saturated_fats['9'] = fuzz.trimf(saturated_fats.universe, [9, 9, 10])
-saturated_fats['10'] = fuzz.trimf(saturated_fats.universe, [10, 10, 11])
+# Energy (kJ/100mL)
+energy_bev['0'] = fuzz.trapmf(energy_bev.universe, [0, 0, 25, 30])
+energy_bev['1'] = fuzz.trapmf(energy_bev.universe, [25, 30, 85, 90])
+energy_bev['2'] = fuzz.trapmf(energy_bev.universe, [85, 90, 145, 150])
+energy_bev['3'] = fuzz.trapmf(energy_bev.universe, [145, 150, 205, 210])
+energy_bev['4'] = fuzz.trapmf(energy_bev.universe, [205, 210, 235, 240])
+energy_bev['5'] = fuzz.trapmf(energy_bev.universe, [235, 240, 265, 270])
+energy_bev['6'] = fuzz.trapmf(energy_bev.universe, [265, 270, 295, 300])
+energy_bev['7'] = fuzz.trapmf(energy_bev.universe, [295, 300, 325, 330])
+energy_bev['8'] = fuzz.trapmf(energy_bev.universe, [325, 330, 355, 360])
+energy_bev['9'] = fuzz.trapmf(energy_bev.universe, [355, 360, 385, 390])
+energy_bev['10'] = fuzz.trapmf(energy_bev.universe, [385, 390, 400, 400])
 
-sugars['0'] = fuzz.trimf(sugars.universe, [0, 0, 3.4])
-sugars['1'] = fuzz.trimf(sugars.universe, [3.4, 3.4, 6.8])
-sugars['2'] = fuzz.trimf(sugars.universe, [6.8, 6.8, 10])
-sugars['3'] = fuzz.trimf(sugars.universe, [10, 10, 14])
-sugars['4'] = fuzz.trimf(sugars.universe, [14, 14, 17])
-sugars['5'] = fuzz.trimf(sugars.universe, [17, 17, 20])
-sugars['6'] = fuzz.trimf(sugars.universe, [20, 20, 24])
-sugars['7'] = fuzz.trimf(sugars.universe, [24, 24, 27])
-sugars['8'] = fuzz.trimf(sugars.universe, [27, 27, 31])
-sugars['9'] = fuzz.trimf(sugars.universe, [31, 31, 37])
-sugars['10'] = fuzz.trimf(sugars.universe, [37, 37, 52])
+# Saturated Fats (g/100mL)
+saturated_fats_bev['0'] = fuzz.trapmf(saturated_fats_bev.universe, [0, 0, 0.9, 1.0])
+saturated_fats_bev['1'] = fuzz.trapmf(saturated_fats_bev.universe, [0.9, 1.0, 1.9, 2.0])
+saturated_fats_bev['2'] = fuzz.trapmf(saturated_fats_bev.universe, [1.9, 2.0, 2.9, 3.0])
+saturated_fats_bev['3'] = fuzz.trapmf(saturated_fats_bev.universe, [2.9, 3.0, 3.9, 4.0])
+saturated_fats_bev['4'] = fuzz.trapmf(saturated_fats_bev.universe, [3.9, 4.0, 4.9, 5.0])
+saturated_fats_bev['5'] = fuzz.trapmf(saturated_fats_bev.universe, [4.9, 5.0, 5.9, 6.0])
+saturated_fats_bev['6'] = fuzz.trapmf(saturated_fats_bev.universe, [5.9, 6.0, 6.9, 7.0])
+saturated_fats_bev['7'] = fuzz.trapmf(saturated_fats_bev.universe, [6.9, 7.0, 7.9, 8.0])
+saturated_fats_bev['8'] = fuzz.trapmf(saturated_fats_bev.universe, [7.9, 8.0, 8.9, 9.0])
+saturated_fats_bev['9'] = fuzz.trapmf(saturated_fats_bev.universe, [8.9, 9.0, 9.9, 10.0])
+saturated_fats_bev['10'] = fuzz.trapmf(saturated_fats_bev.universe, [9.9, 10.0, 11.0, 11.0])
 
-sodium['0'] = fuzz.trimf(sodium.universe, [0, 0, 90])
-sodium['1'] = fuzz.trimf(sodium.universe, [90, 90, 180])
-sodium['2'] = fuzz.trimf(sodium.universe, [180, 180, 270])
-sodium['3'] = fuzz.trimf(sodium.universe, [270, 270, 360])
-sodium['4'] = fuzz.trimf(sodium.universe, [360, 360, 450])
-sodium['5'] = fuzz.trimf(sodium.universe, [450, 450, 540])
-sodium['6'] = fuzz.trimf(sodium.universe, [540, 540, 630])
-sodium['7'] = fuzz.trimf(sodium.universe, [630, 630, 720])
-sodium['8'] = fuzz.trimf(sodium.universe, [720, 720, 810])
-sodium['9'] = fuzz.trimf(sodium.universe, [810, 810, 900])
-sodium['10'] = fuzz.trimf(sodium.universe, [900, 900, 901])
+# Sugars (g/100mL)
+sugars_bev['0'] = fuzz.trapmf(sugars_bev.universe, [0, 0, 0.4, 0.5])
+sugars_bev['1'] = fuzz.trapmf(sugars_bev.universe, [0.4, 0.5, 1.9, 2])
+sugars_bev['2'] = fuzz.trapmf(sugars_bev.universe, [1.9, 2, 3.4, 3.5])
+sugars_bev['3'] = fuzz.trapmf(sugars_bev.universe, [3.4, 3.5, 4.9, 5])
+sugars_bev['4'] = fuzz.trapmf(sugars_bev.universe, [4.9, 5, 5.9, 6])
+sugars_bev['5'] = fuzz.trapmf(sugars_bev.universe, [5.9, 6, 6.9, 7])
+sugars_bev['6'] = fuzz.trapmf(sugars_bev.universe, [6.9, 7, 7.9, 8])
+sugars_bev['7'] = fuzz.trapmf(sugars_bev.universe, [7.9, 8, 8.9, 9])
+sugars_bev['8'] = fuzz.trapmf(sugars_bev.universe, [8.9, 9, 9.9, 10])
+sugars_bev['9'] = fuzz.trapmf(sugars_bev.universe, [9.9, 10, 10.9, 11])
+sugars_bev['10'] = fuzz.trapmf(sugars_bev.universe, [10.9, 11, 49, 50])
 
-proteins['0'] = fuzz.trimf(proteins.universe, [0, 0, 2.4])
-proteins['1'] = fuzz.trimf(proteins.universe, [2.4, 2.4, 4.8])
-proteins['2'] = fuzz.trimf(proteins.universe, [4.8, 4.8, 7.2])
-proteins['3'] = fuzz.trimf(proteins.universe, [7.2, 7.2, 9.6])
-proteins['4'] = fuzz.trimf(proteins.universe, [9.6, 9.6, 12])
-proteins['5'] = fuzz.trimf(proteins.universe, [12, 12, 14])
-proteins['6'] = fuzz.trimf(proteins.universe, [14, 14, 17])
-proteins['7'] = fuzz.trimf(proteins.universe, [17, 17, 18])
+# Sodium (g/100mL)
+sodium_bev['0'] = fuzz.trapmf(sodium_bev.universe, [0, 0, 0.19, 0.2])
+sodium_bev['1'] = fuzz.trapmf(sodium_bev.universe, [0.19, 0.2, 0.39, 0.4])
+sodium_bev['2'] = fuzz.trapmf(sodium_bev.universe, [0.39, 0.4, 0.59, 0.6])
+sodium_bev['3'] = fuzz.trapmf(sodium_bev.universe, [0.59, 0.6, 0.79, 0.8])
+sodium_bev['4'] = fuzz.trapmf(sodium_bev.universe, [0.79, 0.8, 0.99, 1.0])
+sodium_bev['5'] = fuzz.trapmf(sodium_bev.universe, [0.99, 1.0, 1.19, 1.2])
+sodium_bev['6'] = fuzz.trapmf(sodium_bev.universe, [1.19, 1.2, 1.39, 1.4])
+sodium_bev['7'] = fuzz.trapmf(sodium_bev.universe, [1.39, 1.4, 1.59, 1.6])
+sodium_bev['8'] = fuzz.trapmf(sodium_bev.universe, [1.59, 1.6, 1.79, 1.8])
+sodium_bev['9'] = fuzz.trapmf(sodium_bev.universe, [1.79, 1.8, 1.99, 2.0])
+sodium_bev['10'] = fuzz.trapmf(sodium_bev.universe, [1.99, 2.0, 2.19, 2.2])
+sodium_bev['11'] = fuzz.trapmf(sodium_bev.universe, [2.19, 2.2, 2.39, 2.4])
+sodium_bev['12'] = fuzz.trapmf(sodium_bev.universe, [2.39, 2.4, 2.59, 2.6])
+sodium_bev['13'] = fuzz.trapmf(sodium_bev.universe, [2.59, 2.6, 2.79, 2.8])
+sodium_bev['14'] = fuzz.trapmf(sodium_bev.universe, [2.79, 2.8, 2.99, 3.0])
+sodium_bev['15'] = fuzz.trapmf(sodium_bev.universe, [2.99, 3.0, 3.19, 3.2])
+sodium_bev['16'] = fuzz.trapmf(sodium_bev.universe, [3.19, 3.2, 3.39, 3.4])
+sodium_bev['17'] = fuzz.trapmf(sodium_bev.universe, [3.39, 3.4, 3.59, 3.6])
+sodium_bev['18'] = fuzz.trapmf(sodium_bev.universe, [3.59, 3.6, 3.79, 3.8])
+sodium_bev['19'] = fuzz.trapmf(sodium_bev.universe, [3.79, 3.8, 4.0, 4.0])
+sodium_bev['20'] = fuzz.trapmf(sodium_bev.universe, [3.9, 4.0, 5.0, 5.0])
 
-fibers['0'] = fuzz.trimf(fibers.universe, [0, 0, 3.0])
-fibers['1'] = fuzz.trimf(fibers.universe, [3.0, 3.0, 4.1])
-fibers['2'] = fuzz.trimf(fibers.universe, [4.1, 4.1, 5.2])
-fibers['3'] = fuzz.trimf(fibers.universe, [5.2, 5.2, 6.3])
-fibers['4'] = fuzz.trimf(fibers.universe, [6.3, 6.3, 7.4])
-fibers['5'] = fuzz.trimf(fibers.universe, [7.4, 7.4, 8])
+# Proteins (g/100mL)
+proteins_bev['0'] = fuzz.trapmf(proteins_bev.universe, [0, 0, 1.1, 1.2])
+proteins_bev['1'] = fuzz.trapmf(proteins_bev.universe, [1.1, 1.2, 1.4, 1.5])
+proteins_bev['2'] = fuzz.trapmf(proteins_bev.universe, [1.4, 1.5, 1.7, 1.8])
+proteins_bev['3'] = fuzz.trapmf(proteins_bev.universe, [1.7, 1.8, 2.0, 2.1])
+proteins_bev['4'] = fuzz.trapmf(proteins_bev.universe, [2.0, 2.1, 2.3, 2.4])
+proteins_bev['5'] = fuzz.trapmf(proteins_bev.universe, [2.3, 2.4, 2.6, 2.7])
+proteins_bev['6'] = fuzz.trapmf(proteins_bev.universe, [2.6, 2.7, 2.9, 3.0])
+proteins_bev['7'] = fuzz.trapmf(proteins_bev.universe, [2.9, 3.0, 9.9, 10.0])
 
-fruits_vegetables['0'] = fuzz.trimf(fruits_vegetables.universe, [0, 0, 40])
-fruits_vegetables['1'] = fuzz.trimf(fruits_vegetables.universe, [40, 40, 60])
-fruits_vegetables['2'] = fuzz.trimf(fruits_vegetables.universe, [60, 60, 80])
-fruits_vegetables['5'] = fuzz.trimf(fruits_vegetables.universe, [80, 80, 101])
+# Fibers (g/100mL)
+fibers_bev['0'] = fuzz.trapmf(fibers_bev.universe, [0, 0, 2.9, 3.0])
+fibers_bev['1'] = fuzz.trapmf(fibers_bev.universe, [2.9, 3.0, 4.0, 4.1])
+fibers_bev['2'] = fuzz.trapmf(fibers_bev.universe, [4.0, 4.1, 5.1, 5.2])
+fibers_bev['3'] = fuzz.trapmf(fibers_bev.universe, [5.1, 5.2, 6.2, 6.3])
+fibers_bev['4'] = fuzz.trapmf(fibers_bev.universe, [6.2, 6.3, 7.3, 7.4])
+fibers_bev['5'] = fuzz.trapmf(fibers_bev.universe, [7.3, 7.4, 10, 10])
 
-energy_beverages['0'] = fuzz.trimf(energy_beverages.universe, [0, 0, 30])
-energy_beverages['1'] = fuzz.trimf(energy_beverages.universe, [30, 30, 90])
-energy_beverages['2'] = fuzz.trimf(energy_beverages.universe, [90, 90, 150])
-energy_beverages['3'] = fuzz.trimf(energy_beverages.universe, [150, 150, 210])
-energy_beverages['4'] = fuzz.trimf(energy_beverages.universe, [210, 210, 240])
-energy_beverages['5'] = fuzz.trimf(energy_beverages.universe, [240, 240, 270])
-energy_beverages['6'] = fuzz.trimf(energy_beverages.universe, [270, 270, 300])
-energy_beverages['7'] = fuzz.trimf(energy_beverages.universe, [300, 300, 330])
-energy_beverages['8'] = fuzz.trimf(energy_beverages.universe, [330, 330, 360])
-energy_beverages['9'] = fuzz.trimf(energy_beverages.universe, [360, 360, 390])
-energy_beverages['10'] = fuzz.trimf(energy_beverages.universe, [390, 390, 391])
+# Fruits/Vegetables (%)
+fruits_vegetables_bev['0'] = fuzz.trapmf(fruits_vegetables_bev.universe, [0, 0, 39, 40])
+fruits_vegetables_bev['2'] = fuzz.trapmf(fruits_vegetables_bev.universe, [39, 40, 59, 60])
+fruits_vegetables_bev['4'] = fuzz.trapmf(fruits_vegetables_bev.universe, [59, 60, 79, 80])
+fruits_vegetables_bev['5'] = fuzz.trapmf(fruits_vegetables_bev.universe, [79, 80, 100, 100])
 
-saturated_fats_beverages['0'] = fuzz.trimf(saturated_fats_beverages.universe, [0, 0, 1])
-saturated_fats_beverages['1'] = fuzz.trimf(saturated_fats_beverages.universe, [1, 1, 2])
-saturated_fats_beverages['2'] = fuzz.trimf(saturated_fats_beverages.universe, [2, 2, 3])
-saturated_fats_beverages['3'] = fuzz.trimf(saturated_fats_beverages.universe, [3, 3, 4])
-saturated_fats_beverages['4'] = fuzz.trimf(saturated_fats_beverages.universe, [4, 4, 5])
-saturated_fats_beverages['5'] = fuzz.trimf(saturated_fats_beverages.universe, [5, 5, 6])
-saturated_fats_beverages['6'] = fuzz.trimf(saturated_fats_beverages.universe, [6, 6, 7])
-saturated_fats_beverages['7'] = fuzz.trimf(saturated_fats_beverages.universe, [7, 7, 8])
-saturated_fats_beverages['8'] = fuzz.trimf(saturated_fats_beverages.universe, [8, 8, 9])
-saturated_fats_beverages['9'] = fuzz.trimf(saturated_fats_beverages.universe, [9, 9, 10])
-saturated_fats_beverages['10'] = fuzz.trimf(saturated_fats_beverages.universe, [10, 10, 11])
+# --------------------------
+# Food Membership Functions
+# --------------------------
 
-sugars_beverages['0'] = fuzz.trimf(sugars_beverages.universe, [0, 0, 0.5])
-sugars_beverages['1'] = fuzz.trimf(sugars_beverages.universe, [0.5, 0.5, 2])
-sugars_beverages['2'] = fuzz.trimf(sugars_beverages.universe, [2, 2, 3.5])
-sugars_beverages['3'] = fuzz.trimf(sugars_beverages.universe, [3.5, 3.5, 5])
-sugars_beverages['4'] = fuzz.trimf(sugars_beverages.universe, [5, 5, 6])
-sugars_beverages['5'] = fuzz.trimf(sugars_beverages.universe, [6, 6, 7])
-sugars_beverages['6'] = fuzz.trimf(sugars_beverages.universe, [7, 7, 8])
-sugars_beverages['7'] = fuzz.trimf(sugars_beverages.universe, [8, 8, 9])
-sugars_beverages['8'] = fuzz.trimf(sugars_beverages.universe, [9, 9, 10])
-sugars_beverages['9'] = fuzz.trimf(sugars_beverages.universe, [10, 10, 11])
-sugars_beverages['10'] = fuzz.trimf(sugars_beverages.universe, [11, 11, 20])
+# Energy (kJ/100g)
+energy_food['0'] = fuzz.trapmf(energy_food.universe, [0, 0, 330, 335])
+energy_food['1'] = fuzz.trapmf(energy_food.universe, [330, 335, 665, 670])
+energy_food['2'] = fuzz.trapmf(energy_food.universe, [665, 670, 1000, 1005])
+energy_food['3'] = fuzz.trapmf(energy_food.universe, [1000, 1005, 1335, 1340])
+energy_food['4'] = fuzz.trapmf(energy_food.universe, [1335, 1340, 1670, 1675])
+energy_food['5'] = fuzz.trapmf(energy_food.universe, [1670, 1675, 2005, 2010])
+energy_food['6'] = fuzz.trapmf(energy_food.universe, [2005, 2010, 2340, 2345])
+energy_food['7'] = fuzz.trapmf(energy_food.universe, [2340, 2345, 2675, 2680])
+energy_food['8'] = fuzz.trapmf(energy_food.universe, [2675, 2680, 3010, 3015])
+energy_food['9'] = fuzz.trapmf(energy_food.universe, [3010, 3015, 3345, 3350])
+energy_food['10'] = fuzz.trapmf(energy_food.universe, [3345, 3350, 3500, 3500])
 
-sodium_beverages['0'] = fuzz.trimf(sodium_beverages.universe, [0, 0, 0.2])
-sodium_beverages['1'] = fuzz.trimf(sodium_beverages.universe, [0.2, 0.2, 0.4])
-sodium_beverages['2'] = fuzz.trimf(sodium_beverages.universe, [0.4, 0.4, 0.6])
-sodium_beverages['3'] = fuzz.trimf(sodium_beverages.universe, [0.6, 0.6, 0.8])
-sodium_beverages['4'] = fuzz.trimf(sodium_beverages.universe, [0.8, 0.8, 1])
-sodium_beverages['5'] = fuzz.trimf(sodium_beverages.universe, [1, 1, 1.2])
-sodium_beverages['6'] = fuzz.trimf(sodium_beverages.universe, [1.2, 1.2, 1.4])
-sodium_beverages['7'] = fuzz.trimf(sodium_beverages.universe, [1.4, 1.4, 1.6])
-sodium_beverages['8'] = fuzz.trimf(sodium_beverages.universe, [1.6, 1.6, 1.8])
-sodium_beverages['9'] = fuzz.trimf(sodium_beverages.universe, [1.8, 1.8, 2])
-sodium_beverages['10'] = fuzz.trimf(sodium_beverages.universe, [2, 2, 2.2])
-sodium_beverages['11'] = fuzz.trimf(sodium_beverages.universe, [2.2, 2.2, 2.4])
-sodium_beverages['12'] = fuzz.trimf(sodium_beverages.universe, [2.4, 2.4, 2.6])
-sodium_beverages['13'] = fuzz.trimf(sodium_beverages.universe, [2.6, 2.6, 2.8])
-sodium_beverages['14'] = fuzz.trimf(sodium_beverages.universe, [2.8, 2.8, 3])
-sodium_beverages['15'] = fuzz.trimf(sodium_beverages.universe, [3, 3, 3.2])
-sodium_beverages['16'] = fuzz.trimf(sodium_beverages.universe, [3.2, 3.2, 3.4])
-sodium_beverages['17'] = fuzz.trimf(sodium_beverages.universe, [3.4, 3.4, 3.6])
-sodium_beverages['18'] = fuzz.trimf(sodium_beverages.universe, [3.6, 3.6, 3.8])
-sodium_beverages['19'] = fuzz.trimf(sodium_beverages.universe, [3.8, 3.8, 4])
-sodium_beverages['20'] = fuzz.trimf(sodium_beverages.universe, [4, 4, 5])
+# Saturated Fats (g/100g)
+saturated_fats_food['0'] = fuzz.trapmf(saturated_fats_food.universe, [0, 0, 0.9, 1.0])
+saturated_fats_food['1'] = fuzz.trapmf(saturated_fats_food.universe, [0.9, 1.0, 1.9, 2.0])
+saturated_fats_food['2'] = fuzz.trapmf(saturated_fats_food.universe, [1.9, 2.0, 2.9, 3.0])
+saturated_fats_food['3'] = fuzz.trapmf(saturated_fats_food.universe, [2.9, 3.0, 3.9, 4.0])
+saturated_fats_food['4'] = fuzz.trapmf(saturated_fats_food.universe, [3.9, 4.0, 4.9, 5.0])
+saturated_fats_food['5'] = fuzz.trapmf(saturated_fats_food.universe, [4.9, 5.0, 5.9, 6.0])
+saturated_fats_food['6'] = fuzz.trapmf(saturated_fats_food.universe, [5.9, 6.0, 6.9, 7.0])
+saturated_fats_food['7'] = fuzz.trapmf(saturated_fats_food.universe, [6.9, 7.0, 7.9, 8.0])
+saturated_fats_food['8'] = fuzz.trapmf(saturated_fats_food.universe, [7.9, 8.0, 8.9, 9.0])
+saturated_fats_food['9'] = fuzz.trapmf(saturated_fats_food.universe, [8.9, 9.0, 9.9, 10.0])
+saturated_fats_food['10'] = fuzz.trapmf(saturated_fats_food.universe, [9.9, 10.0, 20.9, 21.0])
 
-proteins_beverages['0'] = fuzz.trimf(proteins_beverages.universe, [0, 0, 1.2])
-proteins_beverages['1'] = fuzz.trimf(proteins_beverages.universe, [1.2, 1.2, 1.5])
-proteins_beverages['2'] = fuzz.trimf(proteins_beverages.universe, [1.5, 1.5, 1.8])
-proteins_beverages['3'] = fuzz.trimf(proteins_beverages.universe, [1.8, 1.8, 2.1])
-proteins_beverages['4'] = fuzz.trimf(proteins_beverages.universe, [2.1, 2.1, 2.4])
-proteins_beverages['5'] = fuzz.trimf(proteins_beverages.universe, [2.4, 2.4, 2.7])
-proteins_beverages['6'] = fuzz.trimf(proteins_beverages.universe, [2.7, 2.7, 3])
-proteins_beverages['7'] = fuzz.trimf(proteins_beverages.universe, [3, 3, 4.5])
+# Sugars (g/100g)
+sugars_food['0'] = fuzz.trapmf(sugars_food.universe, [0, 0, 3.3, 3.4])
+sugars_food['1'] = fuzz.trapmf(sugars_food.universe, [3.3, 3.4, 6.7, 6.8])
+sugars_food['2'] = fuzz.trapmf(sugars_food.universe, [6.7, 6.8, 9.9, 10.0])
+sugars_food['3'] = fuzz.trapmf(sugars_food.universe, [9.9, 10.0, 13.9, 14.0])
+sugars_food['4'] = fuzz.trapmf(sugars_food.universe, [13.9, 14.0, 16.9, 17.0])
+sugars_food['5'] = fuzz.trapmf(sugars_food.universe, [16.9, 17.0, 19.9, 20.0])
+sugars_food['6'] = fuzz.trapmf(sugars_food.universe, [19.9, 20.0, 23.9, 24.0])
+sugars_food['7'] = fuzz.trapmf(sugars_food.universe, [23.9, 24.0, 26.9, 27.0])
+sugars_food['8'] = fuzz.trapmf(sugars_food.universe, [26.9, 27.0, 30.9, 31.0])
+sugars_food['9'] = fuzz.trapmf(sugars_food.universe, [30.9, 31.0, 36.9, 37.0])
+sugars_food['10'] = fuzz.trapmf(sugars_food.universe, [36.9, 37.0, 40.9, 41.0])
+sugars_food['11'] = fuzz.trapmf(sugars_food.universe, [40.9, 41.0, 43.9, 44.0])
+sugars_food['12'] = fuzz.trapmf(sugars_food.universe, [43.9, 44.0, 47.9, 48.0])
+sugars_food['13'] = fuzz.trapmf(sugars_food.universe, [47.9, 48.0, 50.9, 51.0])
+sugars_food['14'] = fuzz.trapmf(sugars_food.universe, [50.9, 51.0, 52.0, 52.0])
+sugars_food['15'] = fuzz.trapmf(sugars_food.universe, [51.0, 51.0, 52.0, 52.0])
 
-fibers_beverages['0'] = fuzz.trimf(fibers_beverages.universe, [0, 0, 3.0])
-fibers_beverages['1'] = fuzz.trimf(fibers_beverages.universe, [3.0, 3.0, 4.1])
-fibers_beverages['2'] = fuzz.trimf(fibers_beverages.universe, [4.1, 4.1, 5.2])
-fibers_beverages['3'] = fuzz.trimf(fibers_beverages.universe, [5.2, 5.2, 6.3])
-fibers_beverages['4'] = fuzz.trimf(fibers_beverages.universe, [6.3, 6.3, 7.4])
-fibers_beverages['5'] = fuzz.trimf(fibers_beverages.universe, [7.4, 7.4, 8])
-fibers_beverages['6'] = fuzz.trimf(fibers_beverages.universe, [8, 8, 9]) 
+# Sodium (g/100g)
+sodium_food['0'] = fuzz.trapmf(sodium_food.universe, [0, 0, 0.19, 0.2])
+sodium_food['1'] = fuzz.trapmf(sodium_food.universe, [0.19, 0.2, 0.39, 0.4])
+sodium_food['2'] = fuzz.trapmf(sodium_food.universe, [0.39, 0.4, 0.59, 0.6])
+sodium_food['3'] = fuzz.trapmf(sodium_food.universe, [0.59, 0.6, 0.79, 0.8])
+sodium_food['4'] = fuzz.trapmf(sodium_food.universe, [0.79, 0.8, 0.99, 1.0])
+sodium_food['5'] = fuzz.trapmf(sodium_food.universe, [0.99, 1.0, 1.19, 1.2])
+sodium_food['6'] = fuzz.trapmf(sodium_food.universe, [1.19, 1.2, 1.39, 1.4])
+sodium_food['7'] = fuzz.trapmf(sodium_food.universe, [1.39, 1.4, 1.59, 1.6])
+sodium_food['8'] = fuzz.trapmf(sodium_food.universe, [1.59, 1.6, 1.79, 1.8])
+sodium_food['9'] = fuzz.trapmf(sodium_food.universe, [1.79, 1.8, 1.99, 2.0])
+sodium_food['10'] = fuzz.trapmf(sodium_food.universe, [1.99, 2.0, 2.19, 2.2])
+sodium_food['11'] = fuzz.trapmf(sodium_food.universe, [2.19, 2.2, 2.39, 2.4])
+sodium_food['12'] = fuzz.trapmf(sodium_food.universe, [2.39, 2.4, 2.59, 2.6])
+sodium_food['13'] = fuzz.trapmf(sodium_food.universe, [2.59, 2.6, 2.79, 2.8])
+sodium_food['14'] = fuzz.trapmf(sodium_food.universe, [2.79, 2.8, 2.99, 3.0])
+sodium_food['15'] = fuzz.trapmf(sodium_food.universe, [2.99, 3.0, 3.19, 3.2])
+sodium_food['16'] = fuzz.trapmf(sodium_food.universe, [3.19, 3.2, 3.39, 3.4])
+sodium_food['17'] = fuzz.trapmf(sodium_food.universe, [3.39, 3.4, 3.59, 3.6])
+sodium_food['18'] = fuzz.trapmf(sodium_food.universe, [3.59, 3.6, 3.79, 3.8])
+sodium_food['19'] = fuzz.trapmf(sodium_food.universe, [3.79, 3.8, 4.0, 4.0])
+sodium_food['20'] = fuzz.trapmf(sodium_food.universe, [3.9, 4.0, 5.0, 5.0])
 
-fruits_vegetables_beverages['0'] = fuzz.trimf(fruits_vegetables_beverages.universe, [0, 0, 40])
-fruits_vegetables_beverages['2'] = fuzz.trimf(fruits_vegetables_beverages.universe, [40, 40, 60])
-fruits_vegetables_beverages['4'] = fuzz.trimf(fruits_vegetables_beverages.universe, [60, 60, 80])
-fruits_vegetables_beverages['6'] = fuzz.trimf(fruits_vegetables_beverages.universe, [80, 80, 101])
+# Proteins (g/100g)
+proteins_food['0'] = fuzz.trapmf(proteins_food.universe, [0, 0, 1.9, 2.4])
+proteins_food['1'] = fuzz.trapmf(proteins_food.universe, [1.9, 2.4, 4.8, 5.3])
+proteins_food['2'] = fuzz.trapmf(proteins_food.universe, [4.8, 5.3, 7.2, 7.7])
+proteins_food['3'] = fuzz.trapmf(proteins_food.universe, [7.2, 7.7, 9.6, 10.1])
+proteins_food['4'] = fuzz.trapmf(proteins_food.universe, [9.6, 10.1, 12.0, 12.5])
+proteins_food['5'] = fuzz.trapmf(proteins_food.universe, [12.0, 12.5, 14.0, 14.5])
+proteins_food['6'] = fuzz.trapmf(proteins_food.universe, [14.0, 14.5, 17.0, 17.5])
+proteins_food['7'] = fuzz.trapmf(proteins_food.universe, [17.0, 17.5, 20, 20])
+
+# Fibers (g/100g)
+fibers_food['0'] = fuzz.trapmf(fibers_food.universe, [0, 0, 2.9, 3.0])
+fibers_food['1'] = fuzz.trapmf(fibers_food.universe, [2.9, 3.0, 4.0, 4.1])
+fibers_food['2'] = fuzz.trapmf(fibers_food.universe, [4.0, 4.1, 5.1, 5.2])
+fibers_food['3'] = fuzz.trapmf(fibers_food.universe, [5.1, 5.2, 6.2, 6.3])
+fibers_food['4'] = fuzz.trapmf(fibers_food.universe, [6.2, 6.3, 7.3, 7.4])
+fibers_food['5'] = fuzz.trapmf(fibers_food.universe, [7.3, 7.4, 10, 10])
+
+# Fruits/Vegetables (%)
+fruits_vegetables_food['0'] = fuzz.trapmf(fruits_vegetables_food.universe, [0, 0, 39, 40])
+fruits_vegetables_food['1'] = fuzz.trapmf(fruits_vegetables_food.universe, [39, 40, 59, 60])
+fruits_vegetables_food['2'] = fuzz.trapmf(fruits_vegetables_food.universe, [59, 60, 79, 80])
+fruits_vegetables_food['5'] = fuzz.trapmf(fruits_vegetables_food.universe, [79, 80, 100, 100])
+
+# --------------------------
+# Output Membership Functions
+# --------------------------
+
+# Beverage Negative Points (0-40)
+# Beverage Negative Points (0-40)
+for i in range(21):
+    a = max(0, i*2 - 1)
+    b = i*2
+    c = min(40, (i+1)*2)
+    d = min(40, c + 1)
+    if d < c:
+        d = c
+    n_points_bev[str(i)] = fuzz.trapmf(n_points_bev.universe, [a, b, c, d])
+
+# Beverage Positive Points (0-15)
+for i in range(8):
+    a = max(0, i*2 - 1)
+    b = i*2
+    c = min(15, (i+1)*2)
+    d = min(15, c + 1)
+    if d < c:
+        d = c
+    p_points_bev[str(i)] = fuzz.trapmf(p_points_bev.universe, [a, b, c, d])
+
+# Food Negative Points (0-40)
+for i in range(21):
+    a = max(0, i*2 - 1)
+    b = i*2
+    c = min(40, (i+1)*2)
+    d = min(40, c + 1)
+    if d < c:
+        d = c
+    n_points_food[str(i)] = fuzz.trapmf(n_points_food.universe, [a, b, c, d])
+
+# Food Positive Points (0-15)
+for i in range(8):
+    a = max(0, i*2 - 1)
+    b = i*2
+    c = min(15, (i+1)*2)
+    d = min(15, c + 1)
+    if d < c:
+        d = c
+    p_points_food[str(i)] = fuzz.trapmf(p_points_food.universe, [a, b, c, d])
 
 
-for i in range(11):
-    n_points_food[str(i)] = fuzz.trimf(n_points_food.universe, [i*4, i*4, (i+1)*4])
+# --------------------------
+# Rule Creation
+# --------------------------
 
-for i in range(6):
-    p_points_food[str(i)] = fuzz.trimf(p_points_food.universe, [i*3, i*3, (i+1)*3])
+# Beverage Rules
+bev_energy_rules = [ctrl.Rule(energy_bev[str(i)], n_points_bev[str(i)]) for i in range(11)]
+bev_saturated_fats_rules = [ctrl.Rule(saturated_fats_bev[str(i)], n_points_bev[str(i)]) for i in range(11)]
+bev_sugars_rules = [ctrl.Rule(sugars_bev[str(i)], n_points_bev[str(i)]) for i in range(11)]
+bev_sodium_rules = [ctrl.Rule(sodium_bev[str(i)], n_points_bev[str(i)]) for i in range(21)]
 
+bev_protein_rules = [ctrl.Rule(proteins_bev[str(i)], p_points_bev[str(i)]) for i in range(8)]
+bev_fiber_rules = [ctrl.Rule(fibers_bev[str(i)], p_points_bev[str(i)]) for i in range(6)]
+bev_fv_rules = [
+    ctrl.Rule(fruits_vegetables_bev['0'], p_points_bev['0']),
+    ctrl.Rule(fruits_vegetables_bev['2'], p_points_bev['2']),
+    ctrl.Rule(fruits_vegetables_bev['4'], p_points_bev['4']),
+    ctrl.Rule(fruits_vegetables_bev['5'], p_points_bev['5'])
+]
 
+# Food Rules
+food_energy_rules = [ctrl.Rule(energy_food[str(i)], n_points_food[str(i)]) for i in range(11)]
+food_saturated_fats_rules = [ctrl.Rule(saturated_fats_food[str(i)], n_points_food[str(i)]) for i in range(11)]
+food_sugars_rules = [ctrl.Rule(sugars_food[str(i)], n_points_food[str(i)]) for i in range(16)]
+food_sodium_rules = [ctrl.Rule(sodium_food[str(i)], n_points_food[str(i)]) for i in range(21)]
 
-for i in range(11):
-    n_points_beverages[str(i)] = fuzz.trimf(n_points_beverages.universe, [i*4, i*4, (i+1)*4])
+food_protein_rules = [ctrl.Rule(proteins_food[str(i)], p_points_food[str(i)]) for i in range(8)]
+food_fiber_rules = [ctrl.Rule(fibers_food[str(i)], p_points_food[str(i)]) for i in range(6)]
+food_fv_rules = [
+    ctrl.Rule(fruits_vegetables_food['0'], p_points_food['0']),
+    ctrl.Rule(fruits_vegetables_food['1'], p_points_food['1']),
+    ctrl.Rule(fruits_vegetables_food['2'], p_points_food['2']),
+    ctrl.Rule(fruits_vegetables_food['5'], p_points_food['5'])
+]
 
-for i in range(7):
-    p_points_beverages[str(i)] = fuzz.trimf(p_points_beverages.universe, [i*3, i*3, (i+1)*3])
+# --------------------------
+# Control Systems
+# --------------------------
 
+# Beverage Control Systems
+bev_n_ctrl = ctrl.ControlSystem(
+    bev_energy_rules + 
+    bev_saturated_fats_rules + 
+    bev_sugars_rules + 
+    bev_sodium_rules
+)
 
-n_rules_food = []
-for i in range(11):
-    n_rules_food.append(ctrl.Rule(energy[str(i)] | saturated_fats[str(i)] | sugars[str(i)] | sodium[str(i)], n_points_food[str(i)]))
+bev_p_ctrl = ctrl.ControlSystem(
+    bev_protein_rules + 
+    bev_fiber_rules + 
+    bev_fv_rules
+)
 
+# Food Control Systems
+food_n_ctrl = ctrl.ControlSystem(
+    food_energy_rules + 
+    food_saturated_fats_rules + 
+    food_sugars_rules + 
+    food_sodium_rules
+)
 
-p_rules_food = []
-for i in range(6):
-    p_rules_food.append(ctrl.Rule(proteins[str(i)] | fibers[str(i)], p_points_food[str(i)]))
-    p_rules_food.append(ctrl.Rule(proteins['6'] | proteins['7'], p_points_food['5']))
-    p_rules_food.append(ctrl.Rule(fruits_vegetables['0'], p_points_food['0']))
-    p_rules_food.append(ctrl.Rule(fruits_vegetables['1'], p_points_food['1']))
-    p_rules_food.append(ctrl.Rule(fruits_vegetables['2'], p_points_food['2']))
-    p_rules_food.append(ctrl.Rule(fruits_vegetables['5'], p_points_food['5']))
+food_p_ctrl = ctrl.ControlSystem(
+    food_protein_rules + 
+    food_fiber_rules + 
+    food_fv_rules
+)
 
+# --------------------------
+# Control System Simulations
+# --------------------------
 
-n_rules_beverages = []
-for i in range(11):
-    n_rules_beverages.append(ctrl.Rule(energy_beverages[str(i)] | saturated_fats_beverages[str(i)] | sugars_beverages[str(i)] | sodium_beverages[str(i)], n_points_beverages[str(i)]))
+bev_n_scoring = ctrl.ControlSystemSimulation(bev_n_ctrl)
+bev_p_scoring = ctrl.ControlSystemSimulation(bev_p_ctrl)
+food_n_scoring = ctrl.ControlSystemSimulation(food_n_ctrl)
+food_p_scoring = ctrl.ControlSystemSimulation(food_p_ctrl)
 
+# --------------------------
+# Calculation Functions
+# --------------------------
 
-p_rules_beverages = []
-for i in range(7): 
-    p_rules_beverages.append(ctrl.Rule(proteins_beverages[str(i)] | fibers_beverages[str(i)], p_points_beverages[str(i)]))
-p_rules_beverages.append(ctrl.Rule(proteins_beverages['6'] | proteins_beverages['7'], p_points_beverages['5']))
-p_rules_beverages.append(ctrl.Rule(fruits_vegetables_beverages['0'], p_points_beverages['0']))
-p_rules_beverages.append(ctrl.Rule(fruits_vegetables_beverages['2'], p_points_beverages['2']))
-p_rules_beverages.append(ctrl.Rule(fruits_vegetables_beverages['4'], p_points_beverages['4']))
-p_rules_beverages.append(ctrl.Rule(fruits_vegetables_beverages['6'], p_points_beverages['6']))
-
-
-n_ctrl_food = ctrl.ControlSystem(n_rules_food)
-p_ctrl_food = ctrl.ControlSystem(p_rules_food)
-n_ctrl_beverages = ctrl.ControlSystem(n_rules_beverages)
-p_ctrl_beverages = ctrl.ControlSystem(p_rules_beverages)
-
-n_scoring_food = ctrl.ControlSystemSimulation(n_ctrl_food)
-p_scoring_food = ctrl.ControlSystemSimulation(p_ctrl_food)
-n_scoring_beverages = ctrl.ControlSystemSimulation(n_ctrl_beverages)
-p_scoring_beverages = ctrl.ControlSystemSimulation(p_ctrl_beverages)
-
-def calculate_food_nutri_score(data):
+def calculate_beverage_score(nutrition_data):
     try:
-        nutrition = data['nutritionFact']
+        # Convert energy to kJ if needed (assuming input is in kcal)
+        energy_kj = nutrition_data['energy'] * 4.184
+        
+        # Set inputs for negative points
+        bev_n_scoring.input['energy_bev'] = energy_kj
+        bev_n_scoring.input['saturated_fats_bev'] = nutrition_data['saturated_fat']
+        bev_n_scoring.input['sugars_bev'] = nutrition_data['sugar']
+        bev_n_scoring.input['sodium_bev'] = nutrition_data['sodium']
+        bev_n_scoring.compute()
+        n_points = bev_n_scoring.output['n_points_bev']
+        
+        # Set inputs for positive points
+        bev_p_scoring.input['proteins_bev'] = nutrition_data['protein']
+        bev_p_scoring.input['fibers_bev'] = nutrition_data['fiber']
+        bev_p_scoring.input['fruits_vegetables_bev'] = nutrition_data['fruit_vegetable']
+        bev_p_scoring.compute()
+        p_points = bev_p_scoring.output['p_points_bev']
 
-        # Logic for food
-        energy_val_kJ = nutrition['energy'] * 4.184
-        sodium_val_mg = nutrition['sodium'] * 1000  
+        # Calculate final score
+        nutri_score = n_points - p_points
 
-        n_scoring_food.input['energy'] = energy_val_kJ
-        n_scoring_food.input['saturated_fats'] = nutrition['saturated_fat']
-        n_scoring_food.input['sugars'] = nutrition['sugar']
-        n_scoring_food.input['sodium'] = sodium_val_mg
-        n_scoring_food.compute()
+        # SPECIAL CASE for water / zero nutrition (air mineral)
+        input_is_water = (
+            nutrition_data['energy'] <= 1e-4 and
+            nutrition_data['saturated_fat'] <= 1e-4 and
+            nutrition_data['sugar'] <= 1e-4 and
+            nutrition_data['sodium'] <= 0.02 and # sodium still in 0.015 typical for air
+            nutrition_data['protein'] <= 1e-4 and
+            nutrition_data['fiber'] <= 1e-4 and
+            nutrition_data['fruit_vegetable'] <= 1e-4
+        )
+        if input_is_water:
+            return {
+                "nutri_score": 0,
+                "category": "1",
+                "n_points": 0,
+                "p_points": 0
+            }
+        if (
+            nutrition_data['protein'] == 0 and
+            nutrition_data['fiber'] == 0 and
+            nutrition_data['fruit_vegetable'] == 0
+        ):
+            p_points = 0
 
-        p_scoring_food.input['proteins'] = nutrition['protein']
-        p_scoring_food.input['fibers'] = nutrition['fiber']
-        p_scoring_food.input['fruits_vegetables'] = nutrition['fruit_vegetable']
-        p_scoring_food.compute()
-
-        n_points_val = n_scoring_food.output['n_points_food']
-        p_points_val = p_scoring_food.output['p_points_food']
-        nutri_score = n_points_val - p_points_val
-
-        if nutri_score <= 0:
-            category_score = "1"
-        elif nutri_score <= 2:
-            category_score = "2"
-        elif nutri_score <= 10:
-            category_score = "3"
-        elif nutri_score <= 18:
-            category_score = "4"
-
+        if nutri_score < 1.5:
+            nutri_score = 0
+            category = "1"
+        elif nutri_score <= 2.5:
+            category = "2"
+        elif nutri_score <= 6.5:
+            category = "3"
+        elif nutri_score <= 9.5:
+            category = "4"
+        else:   
+            category = "5"
+            
         return {
-            "nutri_score": nutri_score,
-            "category": category_score
+            "nutri_score": round(nutri_score, 2),
+            "category": category,
+            "n_points": n_points,
+            "p_points": p_points
         }
+        
+    except Exception as e:
+        return {"error": str(e)}
+
+    
+def calculate_food_score(nutrition_data):
+    """Calculate NutriScore for food using fuzzy logic"""
+    try:
+        # Convert energy to kJ if needed (assuming input is in kcal)
+        energy_kj = nutrition_data['energy'] * 4.184
+        
+        # Set inputs for negative points
+        food_n_scoring.input['energy_food'] = energy_kj
+        food_n_scoring.input['saturated_fats_food'] = nutrition_data['saturated_fat']
+        food_n_scoring.input['sugars_food'] = nutrition_data['sugar']
+        food_n_scoring.input['sodium_food'] = nutrition_data['sodium']
+        food_n_scoring.compute()
+        n_points = food_n_scoring.output['n_points_food']
+        
+        # Set inputs for positive points
+        food_p_scoring.input['proteins_food'] = nutrition_data['protein']
+        food_p_scoring.input['fibers_food'] = nutrition_data['fiber']
+        food_p_scoring.input['fruits_vegetables_food'] = nutrition_data['fruit_vegetable']
+        food_p_scoring.compute()
+        p_points = food_p_scoring.output['p_points_food']
+        
+        # Calculate final score
+        nutri_score = n_points - p_points
+        
+        # Determine category
+        if nutri_score <= 0.5:
+            category = "1"
+        elif nutri_score <= 2.5:
+            category = "2"
+        elif nutri_score <= 10.5:
+            category = "3"
+        elif nutri_score <= 18.5:
+            category = "4"
+        else:
+            category = "5"
+            
+        return {
+            "p_points" : p_points,
+            "n_points": n_points,
+            "nutri_score": round(nutri_score, 2),
+            "category": category
+        }
+        
     except Exception as e:
         return {"error": str(e)}
     
-def calculate_beverages_nutri_score(data):
-    try:
-        nutrition = data['nutritionFact']    
-        energy_val_kJ = nutrition['energy'] * 4.184 
-        sodium_val_mg = nutrition['sodium'] * 1000  
-
-        n_scoring_beverages.input['energy_beverages'] = energy_val_kJ
-        n_scoring_beverages.input['saturated_fats_beverages'] = nutrition['saturated_fat']
-        n_scoring_beverages.input['sugars_beverages'] = nutrition['sugar']
-        n_scoring_beverages.input['sodium_beverages'] = sodium_val_mg
-        n_scoring_beverages.compute()
-
-        p_scoring_beverages.input['proteins_beverages'] = nutrition['protein']
-        p_scoring_beverages.input['fibers_beverages'] = nutrition['fiber']
-        p_scoring_beverages.input['fruits_vegetables_beverages'] = nutrition['fruit_vegetable']
-        p_scoring_beverages.compute()
-
-        n_points_val = n_scoring_beverages.output['n_points_beverages']
-        p_points_val = p_scoring_beverages.output['p_points_beverages']
-        nutri_score = n_points_val - p_points_val
-
-
-        if nutri_score <= 0.4:  
-            category_score = "1"
-        elif nutri_score <= 2:
-            category_score = "2"
-        elif nutri_score <= 6:
-            category_score = "3"
-        elif nutri_score <= 9:
-            category_score = "4"
-        else:
-            category_score = "5"
-
-        return {
-            "nutri_score": nutri_score,
-            "label_id": category_score
-        }
-    except Exception as e:
-        return {"error": str(e)}
+# --------------------------
+# API Endpoints
+# --------------------------
 
 @app.route('/calculate-nutri-score/food', methods=['POST'])
 def calculate_food():
     try:
-
-        data_list = request.json  
-
+        data_list = request.json
+        
         if not isinstance(data_list, list):
             return jsonify({"error": "Input must be a list of food products"}), 400
-
+            
         results = []
         for data in data_list:
-            result = calculate_food_nutri_score(data)
+            if 'nutritionFact' in data:
+                nutrition_data = data['nutritionFact']
+            else:
+                return jsonify({"error": "Each food product must contain 'nutritionFact'"}), 400
+            result = calculate_food_score(nutrition_data)
             results.append(result)
-
-        return jsonify(results)  
+            
+        return jsonify(results)
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
 @app.route('/calculate-nutri-score/beverages', methods=['POST'])
 def calculate_beverages():
     try:
-        data_list = request.json  
-
+        data_list = request.json
+        
         if not isinstance(data_list, list):
             return jsonify({"error": "Input must be a list of beverages"}), 400
-
-        # Proses setiap produk
+            
         results = []
         for data in data_list:
-            result = calculate_beverages_nutri_score(data)
+            if 'nutritionFact' in data:
+                nutrition_data = data['nutritionFact']
+            else:
+                return jsonify({"error": "Each beverage must contain 'nutritionFact'"}), 400
+            result = calculate_beverage_score(nutrition_data)
             results.append(result)
-
-        return jsonify(results)  
+        return jsonify(results)
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
