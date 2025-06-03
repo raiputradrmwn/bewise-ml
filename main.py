@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify
 import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
-import pandas as pd
 
 app = Flask(__name__)
 
