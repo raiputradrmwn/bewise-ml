@@ -156,7 +156,7 @@ saturated_fats_food['6'] = fuzz.trapmf(saturated_fats_food.universe, [5.9, 6.0, 
 saturated_fats_food['7'] = fuzz.trapmf(saturated_fats_food.universe, [6.9, 7.0, 7.9, 8.0])
 saturated_fats_food['8'] = fuzz.trapmf(saturated_fats_food.universe, [7.9, 8.0, 8.9, 9.0])
 saturated_fats_food['9'] = fuzz.trapmf(saturated_fats_food.universe, [8.9, 9.0, 9.9, 10.0])
-saturated_fats_food['10'] = fuzz.trapmf(saturated_fats_food.universe, [9.9, 10.0, 11.0, 11.0])
+saturated_fats_food['10'] = fuzz.trapmf(saturated_fats_food.universe, [9.9, 10.0, 20.9, 21.0])
 
 # Sugars (g/100g)
 sugars_food['0'] = fuzz.trapmf(sugars_food.universe, [0, 0, 3.3, 3.4])
@@ -228,36 +228,46 @@ fruits_vegetables_food['5'] = fuzz.trapmf(fruits_vegetables_food.universe, [79, 
 # --------------------------
 
 # Beverage Negative Points (0-40)
-for i in range(11):
-    a = max(0, i*4 - 1)
-    b = i*4
-    c = (i+1)*4
-    d = c + 1
+# Beverage Negative Points (0-40)
+for i in range(21):
+    a = max(0, i*2 - 1)
+    b = i*2
+    c = min(40, (i+1)*2)
+    d = min(40, c + 1)
+    if d < c:
+        d = c
     n_points_bev[str(i)] = fuzz.trapmf(n_points_bev.universe, [a, b, c, d])
 
 # Beverage Positive Points (0-15)
-for i in range(6):
-    a = max(0, i*3 - 1)
-    b = i*3
-    c = (i+1)*3
-    d = c + 1
+for i in range(8):
+    a = max(0, i*2 - 1)
+    b = i*2
+    c = min(15, (i+1)*2)
+    d = min(15, c + 1)
+    if d < c:
+        d = c
     p_points_bev[str(i)] = fuzz.trapmf(p_points_bev.universe, [a, b, c, d])
 
 # Food Negative Points (0-40)
-for i in range(11):
-    a = max(0, i*4 - 1)
-    b = i*4
-    c = (i+1)*4
-    d = c + 1
+for i in range(21):
+    a = max(0, i*2 - 1)
+    b = i*2
+    c = min(40, (i+1)*2)
+    d = min(40, c + 1)
+    if d < c:
+        d = c
     n_points_food[str(i)] = fuzz.trapmf(n_points_food.universe, [a, b, c, d])
 
 # Food Positive Points (0-15)
-for i in range(6):
-    a = max(0, i*3 - 1)
-    b = i*3
-    c = (i+1)*3
-    d = c + 1
+for i in range(8):
+    a = max(0, i*2 - 1)
+    b = i*2
+    c = min(15, (i+1)*2)
+    d = min(15, c + 1)
+    if d < c:
+        d = c
     p_points_food[str(i)] = fuzz.trapmf(p_points_food.universe, [a, b, c, d])
+
 
 # --------------------------
 # Rule Creation
@@ -339,7 +349,6 @@ food_p_scoring = ctrl.ControlSystemSimulation(food_p_ctrl)
 # --------------------------
 
 def calculate_beverage_score(nutrition_data):
-    """Calculate NutriScore for beverages using fuzzy logic"""
     try:
         # Convert energy to kJ if needed (assuming input is in kcal)
         energy_kj = nutrition_data['energy'] * 4.184
@@ -362,8 +371,32 @@ def calculate_beverage_score(nutrition_data):
         # Calculate final score
         nutri_score = n_points - p_points
 
-        # Determine category
-        if nutri_score <= 0.5:
+        # SPECIAL CASE for water / zero nutrition (air mineral)
+        input_is_water = (
+            nutrition_data['energy'] <= 1e-4 and
+            nutrition_data['saturated_fat'] <= 1e-4 and
+            nutrition_data['sugar'] <= 1e-4 and
+            nutrition_data['sodium'] <= 0.02 and # sodium still in 0.015 typical for air
+            nutrition_data['protein'] <= 1e-4 and
+            nutrition_data['fiber'] <= 1e-4 and
+            nutrition_data['fruit_vegetable'] <= 1e-4
+        )
+        if input_is_water:
+            return {
+                "nutri_score": 0,
+                "category": "1",
+                "n_points": 0,
+                "p_points": 0
+            }
+        if (
+            nutrition_data['protein'] == 0 and
+            nutrition_data['fiber'] == 0 and
+            nutrition_data['fruit_vegetable'] == 0
+        ):
+            p_points = 0
+
+        if nutri_score < 1.5:
+            nutri_score = 0
             category = "1"
         elif nutri_score <= 2.5:
             category = "2"
@@ -371,16 +404,19 @@ def calculate_beverage_score(nutrition_data):
             category = "3"
         elif nutri_score <= 9.5:
             category = "4"
-        else:
+        else:   
             category = "5"
             
         return {
             "nutri_score": round(nutri_score, 2),
-            "category": category
+            "category": category,
+            "n_points": n_points,
+            "p_points": p_points
         }
         
     except Exception as e:
         return {"error": str(e)}
+
     
 def calculate_food_score(nutrition_data):
     """Calculate NutriScore for food using fuzzy logic"""
@@ -419,6 +455,8 @@ def calculate_food_score(nutrition_data):
             category = "5"
             
         return {
+            "p_points" : p_points,
+            "n_points": n_points,
             "nutri_score": round(nutri_score, 2),
             "category": category
         }
@@ -440,7 +478,11 @@ def calculate_food():
             
         results = []
         for data in data_list:
-            result = calculate_food_score(data)
+            if 'nutritionFact' in data:
+                nutrition_data = data['nutritionFact']
+            else:
+                return jsonify({"error": "Each food product must contain 'nutritionFact'"}), 400
+            result = calculate_food_score(nutrition_data)
             results.append(result)
             
         return jsonify(results)
@@ -458,9 +500,12 @@ def calculate_beverages():
             
         results = []
         for data in data_list:
-            result = calculate_beverage_score(data)
+            if 'nutritionFact' in data:
+                nutrition_data = data['nutritionFact']
+            else:
+                return jsonify({"error": "Each beverage must contain 'nutritionFact'"}), 400
+            result = calculate_beverage_score(nutrition_data)
             results.append(result)
-            
         return jsonify(results)
         
     except Exception as e:
