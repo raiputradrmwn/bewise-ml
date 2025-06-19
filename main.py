@@ -519,7 +519,7 @@ except Exception as e:
     model = None
     print(f"Failed to load model: {e}")
 
-FEATURES = ['energy', 'saturated_fat', 'sugar', 'sodium', 'protein', 'fiber', 'fruit_vegetable']
+FEATURES = ['energy', 'saturated_fat', 'sugar', 'sodium', 'protein', 'fiber']
 @app.route('/predict-nutriscore', methods=['POST'])
 def predict_nutriscore():
     if model is None:
