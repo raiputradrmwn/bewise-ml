@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
-
+import joblib
 app = Flask(__name__)
 
 @app.route('/')
@@ -509,6 +509,23 @@ def calculate_beverages():
         
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+model = joblib.load("bewise_nutriscore_modelfix.pkl")
+FEATURES = ['energy', 'saturated_fat', 'sugar', 'sodium', 'protein', 'fiber', 'fruit_vegetable']
+@app.route('/predict-nutriscore', methods=['POST'])
+def predict_nutriscore():
+    data = request.json
+
+    try:
+        feats = data.get("features", data)
+        X = np.array([[feats[feat] for feat in FEATURES]])
+    except Exception as e:
+        return jsonify({"error": f"Invalid input, required features: {FEATURES}. Error: {e}"}), 400
+    try:
+        y_pred = model.predict(X)
+        nutriscore_label = y_pred[0] 
+        return jsonify({"nutriscore_label": str(nutriscore_label)})
+    except Exception as e:
+        return jsonify({"error": f"Prediction error: {e}"}), 500
 
 if __name__ == "__main__":
     app.run(port=8080)
