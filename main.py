@@ -1,4 +1,7 @@
+import os
+from pathlib import Path
 from flask import Flask, request, jsonify
+import joblib
 import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
@@ -510,5 +513,62 @@ def calculate_beverages():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+FEATURES = ['energy', 'saturated_fat', 'sugar', 'sodium', 'protein', 'fiber', 'fruit_vegetable']
+MODEL_PATH = "bewise_nutriscore_modelfix.pkl"
+def load_model():
+    """Safely load the ML model with validation"""
+    global model
+    
+    try:
+        # Check if model file exists
+        if not os.path.exists(MODEL_PATH):
+            print(f"Warning: Model file not found at {MODEL_PATH}")
+            return False
+        
+        # Check file size (prevent loading extremely large files)
+        file_size = Path(MODEL_PATH).stat().st_size
+        if file_size > 100 * 1024 * 1024:  # 100 MB limit
+            print(f"Warning: Model file too large ({file_size/1024/1024:.2f} MB)")
+            return False
+            
+        loaded_model = joblib.load(MODEL_PATH)
+        
+        if not hasattr(loaded_model, 'predict'):
+            print("Warning: Loaded object is not a valid model (no predict method)")
+            return False
+            
+        # Test with sample data
+        try:
+            sample_data = np.zeros((1, len(FEATURES)))
+            _ = loaded_model.predict(sample_data)
+        except Exception as e:
+            print(f"Warning: Model failed basic prediction test: {e}")
+            return False
+            
+        # Model is valid, assign to global variable
+        model = loaded_model
+        print("Model loaded successfully")
+        return True
+        
+    except Exception as e:
+        print(f"Error loading model: {e}")
+        return False
+@app.route('/predict-nutriscore', methods=['POST'])
+def predict_nutriscore():
+    data = request.json
+
+    try:
+        feats = data.get("features", data)
+        X = np.array([[feats[feat] for feat in FEATURES]])
+    except Exception as e:
+        return jsonify({"error": f"Invalid input, required features: {FEATURES}. Error: {e}"}), 400
+    try:
+        y_pred = model.predict(X)
+        nutriscore_label = y_pred[0] 
+        return jsonify({"nutriscore_label": str(nutriscore_label)})
+    except Exception as e:
+        return jsonify({"error": f"Prediction error: {e}"}), 500
+
 if __name__ == "__main__":
-    app.run(port=8080)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
