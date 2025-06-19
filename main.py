@@ -1,10 +1,11 @@
+import os
+from pathlib import Path
 from flask import Flask, request, jsonify
+import joblib
 import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
-import joblib
-import os
-from pathlib import Path
+
 app = Flask(__name__)
 
 @app.route('/')
@@ -511,32 +512,26 @@ def calculate_beverages():
         
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
 FEATURES = ['energy', 'saturated_fat', 'sugar', 'sodium', 'protein', 'fiber', 'fruit_vegetable']
-MODEL_PATH = "bewise_nutriscore_modelfix.pkl"
-
-# Global model variable - initially None
-model = None
-
+MODEL_PATH = "model/bewise_nutriscore_modelfix.pkl"
 def load_model():
     """Safely load the ML model with validation"""
     global model
     
     try:
-        # Check if model file exists
+
         if not os.path.exists(MODEL_PATH):
             print(f"Warning: Model file not found at {MODEL_PATH}")
             return False
-        
-        # Check file size (prevent loading extremely large files)
+
         file_size = Path(MODEL_PATH).stat().st_size
         if file_size > 100 * 1024 * 1024:  # 100 MB limit
             print(f"Warning: Model file too large ({file_size/1024/1024:.2f} MB)")
             return False
             
-        # Load the model
         loaded_model = joblib.load(MODEL_PATH)
         
-        # Validate model has expected methods
         if not hasattr(loaded_model, 'predict'):
             print("Warning: Loaded object is not a valid model (no predict method)")
             return False
@@ -548,8 +543,7 @@ def load_model():
         except Exception as e:
             print(f"Warning: Model failed basic prediction test: {e}")
             return False
-            
-        # Model is valid, assign to global variable
+
         model = loaded_model
         print("Model loaded successfully")
         return True
@@ -557,34 +551,21 @@ def load_model():
     except Exception as e:
         print(f"Error loading model: {e}")
         return False
-
-# Initialize model when application starts
-model_loaded = load_model()
-
 @app.route('/predict-nutriscore', methods=['POST'])
 def predict_nutriscore():
-    """Endpoint to predict nutriscore using ML model"""
-    # Check if model is loaded
-    if model is None:
-        # Fallback to fuzzy logic if model isn't available
-        return jsonify({
-            "error": "ML model not available. Using fuzzy logic system instead.",
-            "fuzzy_logic_available": True
-        }), 503
-    
     data = request.json
-    
+
     try:
         feats = data.get("features", data)
         X = np.array([[feats[feat] for feat in FEATURES]])
     except Exception as e:
         return jsonify({"error": f"Invalid input, required features: {FEATURES}. Error: {e}"}), 400
-    
     try:
         y_pred = model.predict(X)
         nutriscore_label = y_pred[0] 
         return jsonify({"nutriscore_label": str(nutriscore_label)})
     except Exception as e:
         return jsonify({"error": f"Prediction error: {e}"}), 500
+
 if __name__ == "__main__":
     app.run(port=8080)
