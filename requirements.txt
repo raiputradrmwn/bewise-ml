@@ -6,3 +6,4 @@ flask
 networkx
 gunicorn
 xgboost
+joblib

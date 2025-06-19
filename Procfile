@@ -1,1 +1,1 @@
-web: python nutriscore_fuzzy.py
+web: pip install -r requirements.txt && python -c "import os; print('Starting app with model:', os.path.exists('bewise_nutriscore_modelfix.pkl'))" && gunicorn main:app
