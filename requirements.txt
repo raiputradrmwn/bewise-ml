@@ -5,5 +5,3 @@ scikit-fuzzy
 flask
 networkx
 gunicorn
-xgboost
-joblib
